@@ -1,6 +1,19 @@
 {
   "cSpell.words": [
+    "DBSTRING",
+    "DBTX",
+    "godotenv",
     "gonic",
+    "healthcheck",
+    "isready",
+    "jackc",
+    "joho",
+    "mapstructure",
+    "pgconn",
+    "psql",
+    "sqlc",
+    "sqlcdb",
+    "sslmode",
     "threadly"
   ]
 }
