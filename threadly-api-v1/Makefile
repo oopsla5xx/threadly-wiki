@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 -include .env
 export
 
@@ -7,7 +9,7 @@ GOOSE_MIGRATION_DIR := database/migrations
 
 export GOOSE_DRIVER GOOSE_DBSTRING GOOSE_MIGRATION_DIR
 
-.PHONY: help db-up db-down db-status db-logs \
+.PHONY: help db-up db-down db-status db-logs db-shell \
         migrate-create migrate-up migrate-down migrate-down-to migrate-status \
         sqlc-generate sqlc-vet
 
@@ -17,6 +19,7 @@ help:
 	@echo "  make db-down         Stop PostgreSQL"
 	@echo "  make db-status       Show container status"
 	@echo "  make db-logs         Show PostgreSQL logs"
+	@echo "  make db-shell         Connect to PostgreSQL"
 	@echo ""
 	@echo "Migrations:"
 	@echo "  make migrate-create name=<name>"
@@ -41,6 +44,9 @@ db-status:
 
 db-logs:
 	docker compose logs -f postgres
+
+db-shell:
+	docker compose exec postgres psql -U threadly -d threadly
 
 # Goose migrations
 migrate-create:
