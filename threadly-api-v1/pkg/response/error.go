@@ -36,3 +36,12 @@ func InternalServerError() *AppError {
 		messages[ErrCodeInternalServerError],
 	)
 }
+
+// ServiceUnavailable creates a standardized HTTP 503 application error.
+func ServiceUnavailable() *AppError {
+	return NewAppError(
+		http.StatusServiceUnavailable,
+		ErrCodeServiceUnavailable,
+		messages[ErrCodeServiceUnavailable],
+	)
+}

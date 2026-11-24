@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"threadly-api-v1/internal/service"
 	"threadly-api-v1/pkg/response"
@@ -22,7 +21,7 @@ func NewUserHandler() *UserHandler {
 func (h *UserHandler) GetUserByID(context *gin.Context) {
 	id := context.Param("id")
 	
-	result, err := h.userService.GetUserByID(id)
+	result, _ := h.userService.GetUserByID(id)
 	// if err != nil {
 	// 	if errors.Is(err, user.ErrNotFound) {
 	// 		_ = context.Error(response.NewAppError(
