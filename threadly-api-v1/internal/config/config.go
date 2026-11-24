@@ -31,6 +31,11 @@ type HTTPConfig struct {
 	WriteTimeout    time.Duration `mapstructure:"write_timeout"`
 	IdleTimeout     time.Duration `mapstructure:"idle_timeout"`
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
+	CORS            CORSConfig    `mapstructure:"cors"`
+}
+
+type CORSConfig struct {
+	AllowOrigins []string `mapstructure:"allow_origins"`
 }
 
 type LogConfig struct {
@@ -59,6 +64,10 @@ func (c *Config) Validate() error {
 
 	if c.HTTP.ShutdownTimeout <= 0 {
 		errs = append(errs, errors.New("http.shutdown_timeout must be positive"))
+	}
+
+	if len(c.HTTP.CORS.AllowOrigins) == 0 {
+		errs = append(errs, errors.New("CORS_ALLOW_ORIGINS is required"))
 	}
 
 	primary := c.Databases.Primary

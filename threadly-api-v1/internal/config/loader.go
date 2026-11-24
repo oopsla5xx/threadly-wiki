@@ -13,10 +13,11 @@ const baseConfigFile = "configs/config.yaml"
 // environmentBindings is the complete list of environment variables that
 // override config values. Keep it in sync with .env.example.
 var environmentBindings = map[string]string{
-	"databases.primary.url": "DATABASE_URL",
-	"http.host":             "HTTP_HOST",
-	"http.port":             "HTTP_PORT",
-	"log.level":             "LOG_LEVEL",
+	"databases.primary.url":   "DATABASE_URL",
+	"http.cors.allow_origins": "CORS_ALLOW_ORIGINS",
+	"http.host":               "HTTP_HOST",
+	"http.port":               "HTTP_PORT",
+	"log.level":               "LOG_LEVEL",
 }
 
 // Load reads configs/config.yaml, merges the environment overlay
