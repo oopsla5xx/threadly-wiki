@@ -9,11 +9,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"threadly-api-v1/internal/config"
+	"threadly-api-v1/internal/handler"
+	"threadly-api-v1/internal/infrastructure/database"
+	"threadly-api-v1/internal/infrastructure/logger"
 )
 
 func main() {
@@ -22,7 +25,34 @@ func main() {
 		log.Fatalf("load config: %v", err)
 	}
 
-	if applicationConfig.App.Environment == "production" {
+	appLogger, err := logger.New(applicationConfig.App.Environment, applicationConfig.Log.Level)
+	if err != nil {
+		log.Fatalf("create logger: %v", err)
+	}
+	defer func() { _ = appLogger.Sync() }()
+
+	if err := run(applicationConfig, appLogger); err != nil {
+		appLogger.Error("server exited with error", zap.Error(err))
+		_ = appLogger.Sync()
+		os.Exit(1)
+	}
+}
+
+func run(applicationConfig *config.Config, appLogger *zap.Logger) error {
+	shutdownSignalContext, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+
+	pool, err := database.NewPool(shutdownSignalContext, applicationConfig.Databases.Primary)
+	if err != nil {
+		return fmt.Errorf("connect primary database: %w", err)
+	}
+	defer pool.Close()
+
+	if applicationConfig.App.Environment == config.EnvironmentProduction {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
@@ -30,18 +60,15 @@ func main() {
 
 	router := gin.New()
 
-	router.Use(gin.Logger())
+	router.Use(logger.RequestLogger(appLogger))
 	router.Use(gin.Recovery())
 
 	if err := router.SetTrustedProxies(nil); err != nil {
-		log.Fatalf("configure trusted proxies: %v", err)
+		return fmt.Errorf("configure trusted proxies: %w", err)
 	}
 
-	router.GET("/ping", func(context *gin.Context) {
-		context.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-		})
-	})
+	// Registered here until routes.NewRouter is wired in.
+	router.GET("/health", handler.NewHealthHandler(pool, appLogger).Check)
 
 	serverAddress := fmt.Sprintf(
 		"%s:%d",
@@ -57,12 +84,11 @@ func main() {
 		IdleTimeout:  applicationConfig.HTTP.IdleTimeout,
 	}
 
-	log.Printf(
-		"starting %s in %s mode",
-		applicationConfig.App.Name,
-		applicationConfig.App.Environment,
+	appLogger.Info("starting server",
+		zap.String("app", applicationConfig.App.Name),
+		zap.String("environment", applicationConfig.App.Environment),
+		zap.String("address", serverAddress),
 	)
-	log.Printf("listening on %s", serverAddress)
 
 	serverErrors := make(chan error, 1)
 
@@ -70,36 +96,31 @@ func main() {
 		serverErrors <- httpServer.ListenAndServe()
 	}()
 
-	shutdownSignalContext, stop := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
-	defer stop()
-
 	select {
 	case err := <-serverErrors:
 		if !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("http server: %v", err)
+			return fmt.Errorf("http server: %w", err)
 		}
 
 	case <-shutdownSignalContext.Done():
-		log.Println("shutdown signal received")
+		appLogger.Info("shutdown signal received")
 	}
 
 	shutdownContext, cancel := context.WithTimeout(
 		context.Background(),
-		10*time.Second,
+		applicationConfig.HTTP.ShutdownTimeout,
 	)
 	defer cancel()
 
 	if err := httpServer.Shutdown(shutdownContext); err != nil {
-		log.Printf("graceful shutdown failed: %v", err)
+		appLogger.Error("graceful shutdown failed", zap.Error(err))
 
 		if closeErr := httpServer.Close(); closeErr != nil {
-			log.Printf("force close server: %v", closeErr)
+			appLogger.Error("force close server", zap.Error(closeErr))
 		}
 	}
 
-	log.Println("server stopped")
+	appLogger.Info("server stopped")
+
+	return nil
 }
