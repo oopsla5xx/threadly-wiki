@@ -66,7 +66,10 @@ func TestRunReturnsErrorWhenAddressInUse(t *testing.T) {
 
 	httpServer := &http.Server{Addr: occupied.Addr().String()}
 
-	if err := Run(context.Background(), httpServer, zap.NewNop(), time.Second); err == nil {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	if err := Run(ctx, httpServer, zap.NewNop(), time.Second); err == nil {
 		t.Fatal("Run returned nil, want listen error")
 	}
 }
