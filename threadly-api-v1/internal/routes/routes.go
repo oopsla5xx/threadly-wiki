@@ -10,11 +10,16 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
-func NewRouter(httpConfig config.HTTPConfig, pool *pgxpool.Pool, appLogger *zap.Logger) (*gin.Engine, error) {
+// Handlers holds the HTTP handlers the router mounts; they are built in the composition root.
+type Handlers struct {
+	Health *handler.HealthHandler
+	User   *handler.UserHandler
+}
+
+func NewRouter(httpConfig config.HTTPConfig, appLogger *zap.Logger, handlers Handlers) (*gin.Engine, error) {
 	r := gin.New()
 
 	if err := r.SetTrustedProxies(nil); err != nil {
@@ -35,11 +40,11 @@ func NewRouter(httpConfig config.HTTPConfig, pool *pgxpool.Pool, appLogger *zap.
 		}),
 	)
 
-	r.GET("/health", handler.NewHealthHandler(pool, appLogger).Check)
+	r.GET("/health", handlers.Health.Check)
 
 	apiV1 := r.Group("/api/v1")
 	{
-		apiV1.GET("/user/:id", handler.NewUserHandler().GetUserByID)
+		apiV1.GET("/user/:id", handlers.User.GetUserByID)
 	}
 
 	return r, nil

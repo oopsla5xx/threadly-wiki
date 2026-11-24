@@ -1,11 +1,13 @@
 package repository
 
-type UserRepository struct {
+import sqlcdb "threadly-api-v1/internal/infrastructure/database/sqlc"
 
+type UserRepository struct {
+	queries *sqlcdb.Queries
 }
 
-func NewUserRepository() *UserRepository {
-	return &UserRepository{}
+func NewUserRepository(queries *sqlcdb.Queries) *UserRepository {
+	return &UserRepository{queries: queries}
 }
 
 func (r *UserRepository) GetByID(id string) (interface{}, error) {
