@@ -32,7 +32,7 @@ func Run(ctx context.Context) error {
 	}
 	defer func() { _ = appLogger.Sync() }()
 
-	if err := run(ctx, applicationConfig, appLogger); err != nil {
+	if err := serve(ctx, applicationConfig, appLogger); err != nil {
 		appLogger.Error("server exited with error", zap.Error(err))
 		return err
 	}
@@ -40,7 +40,7 @@ func Run(ctx context.Context) error {
 	return nil
 }
 
-func run(ctx context.Context, applicationConfig *config.Config, appLogger *zap.Logger) error {
+func serve(ctx context.Context, applicationConfig *config.Config, appLogger *zap.Logger) error {
 	pool, err := database.NewPool(ctx, applicationConfig.Databases.Primary)
 	if err != nil {
 		return fmt.Errorf("connect primary database: %w", err)
