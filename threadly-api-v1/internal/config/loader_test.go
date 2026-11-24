@@ -14,6 +14,7 @@ func TestLoadMergesBaseOverlayAndEnv(t *testing.T) {
 	t.Setenv("APP_ENV", EnvironmentProduction)
 	t.Setenv("DATABASE_URL", "postgres://u:p@localhost:5432/db")
 	t.Setenv("HTTP_PORT", "9090")
+	t.Setenv("CORS_ALLOW_ORIGINS", "https://a.example.com,https://b.example.com")
 
 	cfg, err := Load()
 	if err != nil {
@@ -31,6 +32,9 @@ func TestLoadMergesBaseOverlayAndEnv(t *testing.T) {
 	}
 	if cfg.Databases.Primary.URL != "postgres://u:p@localhost:5432/db" {
 		t.Errorf("DATABASE_URL not bound: %q", cfg.Databases.Primary.URL)
+	}
+	if got := cfg.HTTP.CORS.AllowOrigins; len(got) != 2 || got[0] != "https://a.example.com" || got[1] != "https://b.example.com" {
+		t.Errorf("CORS_ALLOW_ORIGINS not split: %q", got)
 	}
 	if cfg.App.Environment != EnvironmentProduction {
 		t.Errorf("environment = %q", cfg.App.Environment)

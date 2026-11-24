@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap"
 
 	"threadly-api-v1/internal/config"
-	"threadly-api-v1/internal/handler"
 	"threadly-api-v1/internal/infrastructure/database"
 	"threadly-api-v1/internal/infrastructure/logger"
+	"threadly-api-v1/internal/routes"
 )
 
 func main() {
@@ -58,17 +58,10 @@ func run(applicationConfig *config.Config, appLogger *zap.Logger) error {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	router := gin.New()
-
-	router.Use(logger.RequestLogger(appLogger))
-	router.Use(gin.Recovery())
-
-	if err := router.SetTrustedProxies(nil); err != nil {
-		return fmt.Errorf("configure trusted proxies: %w", err)
+	router, err := routes.NewRouter(applicationConfig.HTTP, pool, appLogger)
+	if err != nil {
+		return fmt.Errorf("build router: %w", err)
 	}
-
-	// Registered here until routes.NewRouter is wired in.
-	router.GET("/health", handler.NewHealthHandler(pool, appLogger).Check)
 
 	serverAddress := fmt.Sprintf(
 		"%s:%d",
