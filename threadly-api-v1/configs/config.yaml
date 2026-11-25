@@ -11,6 +11,14 @@ http:
 
 log:
   level: info
+  format: json
+  outputs: [stdout]
+  file:
+    path: /var/log/threadly/app.log
+    max_size_mb: 500
+    max_backups: 3
+    max_age_days: 28
+    compress: true
 
 databases:
   primary:

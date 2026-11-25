@@ -17,7 +17,10 @@ var environmentBindings = map[string]string{
 	"http.cors.allow_origins": "CORS_ALLOW_ORIGINS",
 	"http.host":               "HTTP_HOST",
 	"http.port":               "HTTP_PORT",
+	"log.file.path":           "LOG_FILE_PATH",
+	"log.format":              "LOG_FORMAT",
 	"log.level":               "LOG_LEVEL",
+	"log.outputs":             "LOG_OUTPUTS",
 }
 
 // Load reads configs/config.yaml, merges the environment overlay

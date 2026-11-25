@@ -26,11 +26,11 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	appLogger, err := logger.New(applicationConfig.App.Environment, applicationConfig.Log.Level)
+	appLogger, closeLogger, err := logger.New(applicationConfig.App.Environment, applicationConfig.Log)
 	if err != nil {
 		return fmt.Errorf("create logger: %w", err)
 	}
-	defer func() { _ = appLogger.Sync() }()
+	defer closeLogger()
 
 	if err := serve(ctx, applicationConfig, appLogger); err != nil {
 		appLogger.Error("server exited with error", zap.Error(err))

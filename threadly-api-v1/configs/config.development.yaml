@@ -1,2 +1,10 @@
 log:
   level: debug
+  format: console
+  outputs: [stdout, file]
+  file:
+    path: logs/app.log
+    max_size_mb: 10
+    max_backups: 3
+    max_age_days: 7
+    compress: false

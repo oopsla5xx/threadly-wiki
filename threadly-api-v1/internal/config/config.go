@@ -11,6 +11,14 @@ const (
 	EnvironmentProduction  = "production"
 )
 
+const (
+	LogFormatJSON    = "json"
+	LogFormatConsole = "console"
+
+	LogOutputStdout = "stdout"
+	LogOutputFile   = "file"
+)
+
 type Config struct {
 	App       AppConfig       `mapstructure:"app"`
 	HTTP      HTTPConfig      `mapstructure:"http"`
@@ -39,7 +47,18 @@ type CORSConfig struct {
 }
 
 type LogConfig struct {
-	Level string `mapstructure:"level"`
+	Level string 					`mapstructure:"level"`
+	Format  string        `mapstructure:"format"`
+	Outputs []string      `mapstructure:"outputs"`
+	File    LogFileConfig `mapstructure:"file"`
+}
+
+type LogFileConfig struct {
+	Path       string `mapstructure:"path"`
+	MaxSizeMB  int    `mapstructure:"max_size_mb"`
+	MaxBackups int    `mapstructure:"max_backups"`
+	MaxAgeDays int    `mapstructure:"max_age_days"`
+	Compress   bool   `mapstructure:"compress"`
 }
 
 type DatabasesConfig struct {
@@ -70,6 +89,8 @@ func (c *Config) Validate() error {
 		errs = append(errs, errors.New("CORS_ALLOW_ORIGINS is required"))
 	}
 
+	errs = append(errs, c.Log.validate()...)
+
 	primary := c.Databases.Primary
 
 	if primary.URL == "" {
@@ -84,4 +105,37 @@ func (c *Config) Validate() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+func (l *LogConfig) validate() []error {
+	var errs []error
+
+	if l.Format != LogFormatJSON && l.Format != LogFormatConsole {
+		errs = append(errs, fmt.Errorf("log.format must be %q or %q, got %q", LogFormatJSON, LogFormatConsole, l.Format))
+	}
+
+	if len(l.Outputs) == 0 {
+		errs = append(errs, errors.New("log.outputs must not be empty"))
+	}
+
+	for _, output := range l.Outputs {
+		switch output {
+		case LogOutputStdout:
+		case LogOutputFile:
+			if l.File.Path == "" {
+				errs = append(errs, errors.New("log.file.path is required when log.outputs contains file"))
+			}
+
+			if l.File.MaxSizeMB <= 0 || l.File.MaxBackups < 0 || l.File.MaxAgeDays < 0 {
+				errs = append(errs, fmt.Errorf(
+					"log.file: need max_size_mb > 0, max_backups >= 0, max_age_days >= 0, got %d/%d/%d",
+					l.File.MaxSizeMB, l.File.MaxBackups, l.File.MaxAgeDays,
+				))
+			}
+		default:
+			errs = append(errs, fmt.Errorf("log.outputs: unknown output %q", output))
+		}
+	}
+
+	return errs
 }

@@ -19,4 +19,5 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 notebooks/review/
