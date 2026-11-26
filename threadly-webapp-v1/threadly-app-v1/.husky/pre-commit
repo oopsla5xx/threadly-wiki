@@ -1,0 +1,2 @@
+cd threadly-webapp-v1/threadly-app-v1
+yarn lint && yarn typecheck && yarn format:check && yarn test
