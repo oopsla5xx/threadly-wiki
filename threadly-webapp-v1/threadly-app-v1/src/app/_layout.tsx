@@ -16,7 +16,10 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={NAV_THEME.light}>
           <StatusBar style="auto" />
-          <Stack />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="+not-found" />
+          </Stack>
           <PortalHost />
         </ThemeProvider>
       </QueryClientProvider>
