@@ -17,11 +17,15 @@ yarn expo install <package>  # resolves SDK-compatible versions
 yarn start                   # start the dev server
 yarn lint                    # lint
 yarn typecheck               # typecheck
+yarn format:check            # check formatting
+yarn test                    # run tests
 yarn expo install --check    # check dependency versions
 yarn expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run `yarn lint`, `yarn typecheck`, `yarn format:check`, and `yarn test` before
+declaring any task done. The repository pre-commit hook runs the same checks
+when a commit includes changes under this app directory.
 
 ## Navigation & Routing
 

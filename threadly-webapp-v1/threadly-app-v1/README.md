@@ -28,8 +28,9 @@ React Native Reusables is configured for NativeWind. Add components with
 `yarn cli add <component>`.
 
 Run `yarn typecheck`, `yarn lint`, `yarn format:check`, and `yarn test`
-to validate changes. Husky installs a repository-wide pre-commit hook that runs
-these checks for this app. Set `HUSKY=0` when installing in CI without hooks.
+to validate changes. Husky installs a repository-wide pre-commit hook, but it
+runs these checks only when the commit includes changes to this app directory.
+Set `HUSKY=0` when installing in CI without hooks.
 
 `yarn reset-project` moves `src/app` and `src/features` to `project-backup`
 and creates an empty app. It refuses to overwrite an existing backup; move or
