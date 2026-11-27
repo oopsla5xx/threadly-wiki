@@ -1,0 +1,8 @@
+.expo/
+node_modules/
+dist/
+web-build/
+ios/
+android/
+project-backup/
+yarn.lock

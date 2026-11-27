@@ -1,0 +1,9 @@
+repo_root="$(git rev-parse --show-toplevel)"
+app_path="threadly-webapp-v1/threadly-app-v1"
+
+if git -C "$repo_root" diff --cached --quiet -- "$app_path/"; then
+  exit 0
+fi
+
+cd "$repo_root/$app_path"
+yarn lint && yarn typecheck && yarn format:check && yarn test
