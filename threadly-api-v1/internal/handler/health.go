@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	"threadly-api-v1/pkg/response"
@@ -15,14 +16,16 @@ import (
 const healthCheckTimeout = 2 * time.Second
 
 type HealthHandler struct {
-	pool   *pgxpool.Pool
-	logger *zap.Logger
+	pool        *pgxpool.Pool
+	redisClient *redis.Client
+	logger      *zap.Logger
 }
 
-func NewHealthHandler(pool *pgxpool.Pool, logger *zap.Logger) *HealthHandler {
+func NewHealthHandler(pool *pgxpool.Pool, redisClient *redis.Client, logger *zap.Logger) *HealthHandler {
 	return &HealthHandler{
-		pool:   pool,
-		logger: logger,
+		pool:        pool,
+		redisClient: redisClient,
+		logger:      logger,
 	}
 }
 
@@ -32,16 +35,13 @@ func (h *HealthHandler) Check(ginContext *gin.Context) {
 
 	if err := h.pool.Ping(pingContext); err != nil {
 		h.logger.Error("health check: database ping failed", zap.Error(err))
+		writeServiceUnavailable(ginContext)
+		return
+	}
 
-		appError := response.ServiceUnavailable()
-
-		ginContext.JSON(appError.StatusCode, response.Response{
-			Success: false,
-			Error: &response.ErrorInfo{
-				Code:    appError.Code,
-				Message: appError.Message,
-			},
-		})
+	if err := h.redisClient.Ping(pingContext).Err(); err != nil {
+		h.logger.Error("health check: redis ping failed", zap.Error(err))
+		writeServiceUnavailable(ginContext)
 		return
 	}
 
@@ -50,6 +50,19 @@ func (h *HealthHandler) Check(ginContext *gin.Context) {
 		Data: gin.H{
 			"status":   "ok",
 			"database": "ok",
+			"redis":    "ok",
+		},
+	})
+}
+
+func writeServiceUnavailable(ginContext *gin.Context) {
+	appError := response.ServiceUnavailable()
+
+	ginContext.JSON(appError.StatusCode, response.Response{
+		Success: false,
+		Error: &response.ErrorInfo{
+			Code:    appError.Code,
+			Message: appError.Message,
 		},
 	})
 }

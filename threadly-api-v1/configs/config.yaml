@@ -26,3 +26,10 @@ databases:
     min_conns: 2
     max_conn_lifetime: 1h
     max_conn_idle_time: 30m
+
+redis:
+  db: 0
+  pool_size: 10
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s

@@ -12,6 +12,8 @@ func TestLoadMergesBaseOverlayAndEnv(t *testing.T) {
 	t.Setenv("APP_ENV", EnvironmentProduction)
 	t.Setenv("DATABASE_URL", "postgres://u:p@localhost:5432/db")
 	t.Setenv("HTTP_PORT", "9090")
+	t.Setenv("REDIS_ADDR", "redis.internal:6380")
+	t.Setenv("REDIS_PASSWORD", "secret")
 	t.Setenv("CORS_ALLOW_ORIGINS", "https://a.example.com,https://b.example.com")
 
 	cfg, err := Load()
@@ -33,6 +35,12 @@ func TestLoadMergesBaseOverlayAndEnv(t *testing.T) {
 	}
 	if got := cfg.HTTP.CORS.AllowOrigins; len(got) != 2 || got[0] != "https://a.example.com" || got[1] != "https://b.example.com" {
 		t.Errorf("CORS_ALLOW_ORIGINS not split: %q", got)
+	}
+	if cfg.Redis.Addr != "redis.internal:6380" || cfg.Redis.Password != "secret" {
+		t.Errorf("REDIS_ADDR/REDIS_PASSWORD not bound: addr=%q password=%q", cfg.Redis.Addr, cfg.Redis.Password)
+	}
+	if cfg.Redis.PoolSize != 20 || cfg.Redis.DialTimeout.String() != "5s" {
+		t.Errorf("redis overlay/base not merged: %+v", cfg.Redis)
 	}
 	if cfg.App.Environment != EnvironmentProduction {
 		t.Errorf("environment = %q", cfg.App.Environment)
@@ -62,6 +70,22 @@ func TestLoadDevelopmentLogConfigAndEnvOverrides(t *testing.T) {
 	}
 	if log.File.Path != "/tmp/threadly/app.log" || log.File.MaxSizeMB != 10 || log.File.Compress {
 		t.Errorf("file config wrong: %+v", log.File)
+	}
+	if cfg.Redis.Addr != "localhost:6379" || cfg.Redis.PoolSize != 10 {
+		t.Errorf("dev redis defaults wrong: %+v", cfg.Redis)
+	}
+}
+
+func TestLoadProductionRequiresRedisAddr(t *testing.T) {
+	t.Chdir("../..")
+
+	t.Setenv("APP_ENV", EnvironmentProduction)
+	t.Setenv("DATABASE_URL", "postgres://u:p@localhost:5432/db")
+	t.Setenv("CORS_ALLOW_ORIGINS", "https://a.example.com")
+	t.Setenv("REDIS_ADDR", "")
+
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "REDIS_ADDR") {
+		t.Fatalf("expected REDIS_ADDR error, got %v", err)
 	}
 }
 

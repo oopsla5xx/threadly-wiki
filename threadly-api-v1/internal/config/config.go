@@ -24,6 +24,7 @@ type Config struct {
 	HTTP      HTTPConfig      `mapstructure:"http"`
 	Log       LogConfig       `mapstructure:"log"`
 	Databases DatabasesConfig `mapstructure:"databases"`
+	Redis     RedisConfig     `mapstructure:"redis"`
 }
 
 type AppConfig struct {
@@ -73,6 +74,16 @@ type DatabaseConfig struct {
 	MaxConnIdleTime time.Duration `mapstructure:"max_conn_idle_time"`
 }
 
+type RedisConfig struct {
+	Addr         string        `mapstructure:"addr"`
+	Password     string        `mapstructure:"password"`
+	DB           int           `mapstructure:"db"`
+	PoolSize     int           `mapstructure:"pool_size"`
+	DialTimeout  time.Duration `mapstructure:"dial_timeout"`
+	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
+	WriteTimeout time.Duration `mapstructure:"write_timeout"`
+}
+
 // Validate reports every invalid field at once so startup fails with a complete message.
 func (c *Config) Validate() error {
 	var errs []error
@@ -104,7 +115,23 @@ func (c *Config) Validate() error {
 		))
 	}
 
+	errs = append(errs, c.Redis.validate()...)
+
 	return errors.Join(errs...)
+}
+
+func (r *RedisConfig) validate() []error {
+	var errs []error
+
+	if r.Addr == "" {
+		errs = append(errs, errors.New("redis.addr (REDIS_ADDR) is required"))
+	}
+
+	if r.DB < 0 || r.PoolSize < 1 {
+		errs = append(errs, fmt.Errorf("redis: need db >= 0 and pool_size >= 1, got db=%d pool_size=%d", r.DB, r.PoolSize))
+	}
+
+	return errs
 }
 
 func (l *LogConfig) validate() []error {

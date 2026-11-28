@@ -8,3 +8,6 @@ log:
     max_backups: 3
     max_age_days: 7
     compress: false
+
+redis:
+  addr: localhost:6379

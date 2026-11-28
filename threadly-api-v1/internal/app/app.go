@@ -9,6 +9,7 @@ import (
 
 	"threadly-api-v1/internal/config"
 	"threadly-api-v1/internal/handler"
+	"threadly-api-v1/internal/infrastructure/cache"
 	"threadly-api-v1/internal/infrastructure/database"
 	sqlcdb "threadly-api-v1/internal/infrastructure/database/sqlc"
 	"threadly-api-v1/internal/infrastructure/logger"
@@ -47,6 +48,12 @@ func serve(ctx context.Context, applicationConfig *config.Config, appLogger *zap
 	}
 	defer pool.Close()
 
+	redisClient, err := cache.NewRedisClient(ctx, applicationConfig.Redis)
+	if err != nil {
+		return fmt.Errorf("connect redis: %w", err)
+	}
+	defer redisClient.Close()
+
 	if applicationConfig.App.Environment == config.EnvironmentProduction {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
@@ -57,7 +64,7 @@ func serve(ctx context.Context, applicationConfig *config.Config, appLogger *zap
 	userService := service.NewUserService(repository.NewUserRepository(queries))
 
 	router, err := routes.NewRouter(applicationConfig.HTTP, appLogger, routes.Handlers{
-		Health: handler.NewHealthHandler(pool, appLogger),
+		Health: handler.NewHealthHandler(pool, redisClient, appLogger),
 		User:   handler.NewUserHandler(userService),
 	})
 	if err != nil {
