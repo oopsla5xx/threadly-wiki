@@ -1,6 +1,7 @@
 import type { BottomTabBarProps } from "expo-router/js-tabs"
 import { Heart, House, Plus, Send, UserRound } from "lucide-react-native"
-import { useEffect, useState } from "react"
+import { THEME } from "@/lib/theme"
+import { useEffect, useRef, useState } from "react"
 import { Pressable, View, type LayoutChangeEvent } from "react-native"
 import Animated, {
   useAnimatedStyle,
@@ -11,7 +12,8 @@ import Animated, {
 } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-const tabRoutes = ["home", "message", "new_thread", "activity", "profile"] as const
+const BAR_PADDING_X = 20
+const INDICATOR_INSET = 4
 
 const iconByRoute = {
   home: House,
@@ -21,17 +23,24 @@ const iconByRoute = {
   profile: UserRound,
 } as const
 
-export function HomeBottomTabs({ state, descriptors, navigation }: BottomTabBarProps) {
+export function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets()
   const [tabBarWidth, setTabBarWidth] = useState(0)
   const indicatorOffset = useSharedValue(0)
   const indicatorScale = useSharedValue(1)
-  const activeRouteName = state.routes[state.index]?.name
-  const activeIndex = Math.max(0, tabRoutes.indexOf(activeRouteName as (typeof tabRoutes)[number]))
-  const slotWidth = Math.max(0, tabBarWidth - 40) / tabRoutes.length
-  const indicatorWidth = Math.max(0, slotWidth - 8)
+  const previousIndex = useRef(state.index)
+  const activeIndex = state.index
+  const slotWidth = Math.max(0, tabBarWidth - BAR_PADDING_X * 2) / state.routes.length
+  const indicatorWidth = Math.max(0, slotWidth - INDICATOR_INSET * 2)
 
   useEffect(() => {
+    // Width-only changes (first layout, rotation) must not animate or bounce.
+    if (previousIndex.current === activeIndex) {
+      indicatorOffset.value = activeIndex * slotWidth
+      return
+    }
+
+    previousIndex.current = activeIndex
     indicatorOffset.value = withSpring(activeIndex * slotWidth, {
       damping: 18,
       stiffness: 180,
@@ -53,26 +62,24 @@ export function HomeBottomTabs({ state, descriptors, navigation }: BottomTabBarP
 
   return (
     <View
-      className="mx-4 h-20 flex-row items-center justify-center rounded-[2.4rem] bg-white px-5 shadow-2xl"
-      style={{ marginBottom: Math.max(insets.bottom, 20) }}
+      className="mx-4 h-20 flex-row items-center justify-center rounded-[2.4rem] bg-white shadow-2xl"
+      style={{ paddingHorizontal: BAR_PADDING_X, marginBottom: Math.max(insets.bottom, 20) }}
       onLayout={handleLayout}
     >
       {indicatorWidth > 0 ? (
         <Animated.View
           pointerEvents="none"
-          className="absolute left-2 h-14 rounded-b-[2rem] rounded-l-[4rem] rounded-r-[4rem] rounded-t-[2rem] border border-slate-100 bg-slate-100 px-11 py-4"
-          style={[{ width: indicatorWidth }, indicatorStyle]}
+          className="absolute h-14 rounded-full border border-slate-100 bg-slate-100"
+          style={[{ left: BAR_PADDING_X + INDICATOR_INSET, width: indicatorWidth }, indicatorStyle]}
         />
       ) : null}
 
-      {tabRoutes.map((routeName) => {
-        const route = state.routes.find((item) => item.name === routeName)
-        if (!route) return null
+      {state.routes.map((route, routeIndex) => {
+        const Icon = iconByRoute[route.name as keyof typeof iconByRoute]
+        if (!Icon) return null
 
-        const routeIndex = state.routes.findIndex((item) => item.key === route.key)
         const isFocused = state.index === routeIndex
         const label = descriptors[route.key].options.title ?? route.name
-        const Icon = iconByRoute[routeName]
 
         return (
           <Pressable
@@ -95,17 +102,9 @@ export function HomeBottomTabs({ state, descriptors, navigation }: BottomTabBarP
             onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
           >
             <Icon
-              color="#0a0a0a"
-              fill={
-                isFocused &&
-                (routeName === "home" ||
-                  routeName === "activity" ||
-                  routeName === "message" ||
-                  routeName === "profile")
-                  ? "#0a0a0a"
-                  : "none"
-              }
-              size={routeName === "new_thread" ? 34 : 29}
+              color={THEME.light.foreground}
+              fill={isFocused && route.name !== "new_thread" ? THEME.light.foreground : "none"}
+              size={route.name === "new_thread" ? 34 : 29}
               strokeWidth={2.2}
             />
           </Pressable>

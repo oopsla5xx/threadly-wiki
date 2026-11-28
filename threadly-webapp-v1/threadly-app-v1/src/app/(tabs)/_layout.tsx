@@ -1,4 +1,4 @@
-import { HomeBottomTabs } from "@/components/ui/bottom-tab.native"
+import { BottomTabBar } from "@/components/ui/bottom-tab"
 import { Tabs } from "expo-router"
 
 export default function TabsLayout() {
@@ -6,7 +6,7 @@ export default function TabsLayout() {
     <Tabs
       initialRouteName="home"
       screenOptions={{ headerShown: false }}
-      tabBar={(props) => <HomeBottomTabs {...props} />}
+      tabBar={(props) => <BottomTabBar {...props} />}
     >
       <Tabs.Screen name="home" options={{ title: "Home" }} />
       <Tabs.Screen name="message" options={{ title: "Messages" }} />
