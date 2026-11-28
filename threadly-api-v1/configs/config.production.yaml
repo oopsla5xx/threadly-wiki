@@ -1,3 +1,6 @@
 databases:
   primary:
     max_conns: 20
+
+redis:
+  pool_size: 20

@@ -21,6 +21,8 @@ var environmentBindings = map[string]string{
 	"log.format":              "LOG_FORMAT",
 	"log.level":               "LOG_LEVEL",
 	"log.outputs":             "LOG_OUTPUTS",
+	"redis.addr":              "REDIS_ADDR",
+	"redis.password":          "REDIS_PASSWORD",
 }
 
 // Load reads configs/config.yaml, merges the environment overlay
