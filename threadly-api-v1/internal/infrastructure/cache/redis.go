@@ -13,13 +13,14 @@ import (
 // or an unreachable server fails at startup.
 func NewRedisClient(ctx context.Context, redisConfig config.RedisConfig) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:         redisConfig.Addr,
-		Password:     redisConfig.Password,
-		DB:           redisConfig.DB,
-		PoolSize:     redisConfig.PoolSize,
-		DialTimeout:  redisConfig.DialTimeout,
-		ReadTimeout:  redisConfig.ReadTimeout,
-		WriteTimeout: redisConfig.WriteTimeout,
+		Addr:                  redisConfig.Addr,
+		Password:              redisConfig.Password,
+		DB:                    redisConfig.DB,
+		PoolSize:              redisConfig.PoolSize,
+		DialTimeout:           redisConfig.DialTimeout,
+		ReadTimeout:           redisConfig.ReadTimeout,
+		WriteTimeout:          redisConfig.WriteTimeout,
+		ContextTimeoutEnabled: true,
 	})
 
 	if err := client.Ping(ctx).Err(); err != nil {
